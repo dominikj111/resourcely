@@ -1,0 +1,1 @@
+// even more convenient way to create resources
