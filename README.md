@@ -1,4 +1,4 @@
-# Stateful
+# Resourcely
 
 [![Crates.io](https://img.shields.io/crates/v/stateful)](https://crates.io/crates/stateful)
 [![Documentation](https://docs.rs/stateful/badge.svg)](https://docs.rs/stateful)
