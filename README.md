@@ -6,6 +6,8 @@
 [![Build Status](https://github.com/yourusername/stateful/actions/workflows/rust.yml/badge.svg)](https://github.com/yourusername/stateful/actions)
 [![codecov](https://codecov.io/gh/yourusername/stateful/graph/badge.svg?token=YOUR-TOKEN)](https://codecov.io/gh/yourusername/stateful)
 
+⚠️ Work in Progress ~60% done
+
 A high-performance Rust library for managing both local and remote state with built-in caching, observation, and synchronization capabilities.
 
 ## 🚀 Features
