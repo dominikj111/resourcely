@@ -48,14 +48,14 @@ pub fn parse_file<T: for<'a> Deserialize<'a>>(
 pub fn parse_file_with_timestamp_by_path<T: for<'a> Deserialize<'a>>(
     file_path: &Path,
     file_type: &ResourceFileType,
-) -> Result<(T, Duration), String> {
+) -> Result<(T, SystemTime), String> {
     let filename = file_path
         .file_name()
         .ok_or_else(|| format!("Failed to get filename from path: {}", file_path.display()))?
         .to_str()
         .ok_or_else(|| format!("Invalid filename encoding"))?;
 
-    let disk_manifest_timestamp = Duration::from_secs(
+    let disk_manifest_timestamp_duration = Duration::from_secs(
         filename
             .split('-')
             .next_back()
@@ -66,6 +66,8 @@ pub fn parse_file_with_timestamp_by_path<T: for<'a> Deserialize<'a>>(
             .parse::<u64>()
             .map_err(|e| format!("Failed to parse timestamp: {e}"))?,
     );
+
+    let disk_manifest_timestamp = SystemTime::UNIX_EPOCH + disk_manifest_timestamp_duration;
 
     Ok((parse_file(file_path, file_type)?, disk_manifest_timestamp))
 }
