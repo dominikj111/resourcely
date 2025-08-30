@@ -1,10 +1,23 @@
 [package]
-name = "stateful"
+name = "resourcely"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
+description = "A Rust library for managing local and remote resources with caching"
+repository = "https://github.com/dominikj111/resourcely"
+license = "MIT"
+keywords = ["resource", "caching", "http", "file"]
+categories = ["filesystem", "web-programming::http-client"]
+
+documentation = "https://docs.rs/resourcely"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-serde_yaml = "0.9.34-deprecated"
-reqwest = { version = "0.12.23", features = ["json", "stream"] }
+serde_yaml = "0.9"
+toml = "0.9"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+async-trait = "0.1"
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3.21.0"
