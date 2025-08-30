@@ -63,6 +63,8 @@ let remote = Remote::new(
 ### Reading Data
 
 ```rust
+use resourcely::{DataResult, ResourceReader};
+
 // Get data or return error
 match local.get_data_or_error(false).await {
     Ok(DataResult::Fresh(data)) => println!("Fresh data: {:?}", data),
@@ -73,20 +75,60 @@ match local.get_data_or_error(false).await {
 // Get data or default
 let data = remote.get_data_or_default(false).await;
 println!("Data: {:?}", data);
+
+// Get data or none
+if let Some(data) = local.get_data_or_none(true).await {
+    println!("Got data: {:?}", data);
+}
 ```
 
 ### Marking Data as Stale
 
 ```rust
 // Force refresh on next read
-local.mark_stale();
+local.mark_as_stale()?;
+
+// Check if data is marked as stale
+if local.is_marked_stale()? {
+    println!("Data is marked as stale");
+}
+
+// Check if data is fresh (considering cache timeouts and stale marker)
+if local.is_fresh()? {
+    println!("Data is fresh");
+}
 ```
 
 ## Advanced Features
 
 ### Custom Parsing
 
-You can implement custom parsing logic by implementing the `ReadOnlyResource` trait for your types.
+The library provides support for JSON and YAML formats out of the box. TOML and plain text formats are defined in the `ResourceFileType` enum but not yet implemented. You can extend functionality by implementing the `ResourceReader` trait for your custom types.
+
+### Resource State Management
+
+The `ResourceReader` trait provides several methods for managing resource state:
+
+```rust
+// Check if data is fresh (not stale and within cache timeout)
+let is_fresh = resource.is_fresh()?;
+
+// Check if data is marked as stale
+let is_stale = resource.is_marked_stale()?;
+
+// Mark data as stale to force refresh
+resource.mark_as_stale()?;
+```
+
+### Builder Pattern (Incomplete)
+
+A builder pattern is partially implemented but currently incomplete:
+
+```rust
+// Note: Builder implementation is currently incomplete
+// and references undefined traits (LocalResource, RemoteResource)
+// Use the direct state_manager API for now
+```
 
 ### Error Handling
 
@@ -102,30 +144,44 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## TODO
 
-## Future Improvements
+### Completed Achievements ✅
 
-- ✅ Improve error types and error handling
-- ⬜️ Add comprehensive unit tests
-- ⬜️ Add timeout handling for HTTP requests
-- 🟧 Extract duplicate code to utilities
-- ⬜️ Add observable pattern + watching for changes to allow reactive event driven work
-- ⬜️ Add resource factory and builder patterns for more convenient creation
-- ⬜️ Expand documentation with more examples and API references
-- 🤔 Add more caching strategies
-- 🤔 Add benchmarks for performance-critical paths
+- ✅ **Core Resource Management System** - Unified interface for local and remote resource access
+- ✅ **Advanced Error Handling** - Comprehensive error types with descriptive messages using `thiserror`
+- ✅ **Multi-format Support** - JSON and YAML parsing with extensible format system
+- ✅ **Intelligent Caching** - Time-based cache expiration with staleness control and state management
+- ✅ **Thread-safe Architecture** - Concurrent access support with proper synchronization
+- ✅ **Flexible Resource State Management** - Mark as stale, freshness checking, and cache state inspection
 
-### New Features Planned
+### High Priority Improvements
 
-- ⬜️ Support CRUD on local files
-- ⬜️ Support for more file formats (plain text, XML, TOML)
-- ⬜️ Add RESTful API support (CRUD endpoints on remote) + non-RESTful (generic HTTP service for CRUD operations on remote)
-- ⬜️ Explore authentication methods and security process flows for remote resources (e.g. API keys, OAuth, etc.)
+- ⬜️ **Comprehensive Test Suite** - Unit and integration tests for all core functionality
+- ⬜️ **HTTP Request Timeouts** - Configurable timeout handling for remote resource fetching
+- 🟧 **Code Consolidation** - Extract and eliminate duplicate code across modules
+- 🟧 **Builder Pattern Completion** - Finalize and export the fluent resource creation API
+- ⬜️ **Reactive Resource Management** - Observable pattern with file system watching for real-time updates
 
-### Nice to Have
+### Medium Priority Features
 
-- ⬜️ Add feature for other cache implementations (e.g. Redis, etc.)
-- ⬜️ Add feature for other storage backends (e.g. database, etc.)
-- ⬜️ Add feature to process zip (compress/decompress)
-- ⬜️ Add feature to process binary
-- ⬜️ Add feature for FTP, SFTP access
-- ⬜️ Add feature for other hash algorithms besides md5 (sha2, etc.)
+- 🟧 **Resource Factory Patterns** - Convenient creation utilities (skeleton exists but needs implementation)
+- ⬜️ **Enhanced Documentation** - Comprehensive examples and API reference guides
+- 🤔 **Advanced Caching Strategies** - Redis, distributed caching, and cloud-based cache services
+- 🤔 **Performance Benchmarking** - Automated benchmarks for performance-critical operations
+
+### New Features Pipeline
+
+- ⬜️ **Local File CRUD Operations** - Create, update, and delete capabilities for local resources
+- ⬜️ **Extended Format Support** - TOML, XML, and plain text parsing
+- ⬜️ **RESTful API Integration** - Full CRUD support for REST endpoints and generic HTTP services
+- ⬜️ **Authentication Framework** - API keys, OAuth, and other security mechanisms for remote resources
+- ⬜️ **Secure Protocol Support** - FTP, SFTP, and SSH-based file access
+- ⬜️ **Large File Optimization** - Zero-copy processing and reference-based handling for big files
+
+### Future Enhancements
+
+- ⬜️ **Large File Downloads** - Efficient handling of multi-gigabyte file transfers
+- 🤔 **Alternative Storage Backends** - Database integration and cloud storage support
+- ⬜️ **Compression Support** - Built-in compression and decompression capabilities
+- ⬜️ **Binary File Processing** - Native support for binary data formats
+- ⬜️ **Advanced Hash Algorithms** - SHA-2, SHA-3, and other cryptographic hash support
+- ⬜️ **Stream Processing** - Memory-efficient processing for very large files
