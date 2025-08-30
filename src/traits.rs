@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use serde::{de::DeserializeOwned, Serialize};
 
+use crate::base::ResourceState;
+
 #[derive(Debug, Clone)]
 pub enum ResourceFileType {
     Json,
@@ -58,6 +60,23 @@ pub trait ResourceReader<T>
 where
     T: Send + Sync + DeserializeOwned + Serialize + Default,
 {
+    fn get_state(&self) -> &ResourceState<T>;
+
+    fn mark_as_stale(&self) -> Result<(), ResourceError> {
+        self.get_state().mark_as_stale();
+        Ok(())
+    }
+
+    fn is_marked_stale(&self) -> Result<bool, ResourceError> {
+        self.get_state().is_marked_stale()
+    }
+
+    fn is_fresh(&self) -> Result<bool, ResourceError> {
+        Ok(!self.is_marked_stale()?
+            || self.get_state().is_internal_data_fresh()?
+            || self.get_state().is_disk_cached_data_fresh()?)
+    }
+
     async fn get_data_or_error(
         &self,
         allow_stale: bool,

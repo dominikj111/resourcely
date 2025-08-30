@@ -71,6 +71,29 @@ impl<T: Serialize + DeserializeOwned> ResourceState<T> {
         &self.props.url
     }
 
+    pub fn is_internal_data_fresh(&self) -> Result<bool, ResourceError> {
+        let cache = self.get_internal_cache_guard()?;
+
+        let is_fresh = cache
+            .timestamp
+            .elapsed()
+            .map(|elapsed| match self.props.timeout {
+                Some(timeout) => elapsed < timeout,
+                None => true,
+            })
+            .unwrap_or(false); // treat clock rollback as stale
+
+        Ok(is_fresh)
+    }
+
+    pub fn is_disk_cached_data_fresh(&self) -> Result<bool, ResourceError> {
+        // TODO: improvement required - this causes the drive reading and content parsing;
+        match self.get_disk_cached_data()? {
+            Some((_, fresh, _)) => Ok(fresh),
+            None => Ok(false),
+        }
+    }
+
     pub fn get_internal_data(&self) -> Result<Option<(Arc<T>, bool, SystemTime)>, ResourceError> {
         let cache = self.get_internal_cache_guard()?;
 

@@ -21,6 +21,10 @@ impl<T> ResourceReader<T> for DefaultRemoteResourceReader<T>
 where
     T: Send + Sync + DeserializeOwned + Serialize + Default,
 {
+    fn get_state(&self) -> &ResourceState<T> {
+        &self.state
+    }
+
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
@@ -30,12 +34,12 @@ where
         let mut stale_disk_cached_data: Option<Arc<T>> = None;
         let mut stale_disk_cached_data_timestamp: Option<SystemTime> = None;
 
-        if !self.state.is_marked_stale()? {
+        if !self.get_state().is_marked_stale()? {
             ///////////////////////////////////////////
             // 1. Check current internal state first //
             ///////////////////////////////////////////
 
-            if let Some((data, fresh, timestamp)) = self.state.get_internal_data()? {
+            if let Some((data, fresh, timestamp)) = self.get_state().get_internal_data()? {
                 if fresh {
                     // timestamp based
                     return Ok(DataResult::Fresh(data));
@@ -48,7 +52,7 @@ where
             // 2. Check on disk cached state //
             ///////////////////////////////////
 
-            if let Some((data, fresh, timestamp)) = self.state.get_disk_cached_data()? {
+            if let Some((data, fresh, timestamp)) = self.get_state().get_disk_cached_data()? {
                 if fresh {
                     // timestamp based
                     return Ok(DataResult::Fresh(data));
@@ -63,12 +67,12 @@ where
         /////////////////////////////////////////////////////////////////
 
         let fresh_data_from_server: Option<Arc<T>> =
-            match reqwest::get(self.state.get_url().to_owned()).await {
+            match reqwest::get(self.get_state().get_url().to_owned()).await {
                 Ok(resp) => {
                     match resp.text().await {
                         Ok(body) => {
                             // Try to parse as JSON or YAML depending on file_type
-                            match &self.state.get_file_type() {
+                            match &self.get_state().get_file_type() {
                                 ResourceFileType::Json => {
                                     serde_json::from_str(&body).ok().map(Arc::new)
                                 }
@@ -111,11 +115,11 @@ where
 
         save_to_disk_override(
             &*fresh_data,
-            self.state.get_file_path().as_ref(),
-            self.state.get_file_type(),
+            self.get_state().get_file_path().as_ref(),
+            self.get_state().get_file_type(),
         )?;
 
-        self.state.set_internal_cache(fresh_data.clone())?;
+        self.get_state().set_internal_cache(fresh_data.clone())?;
 
         Ok(DataResult::Fresh(fresh_data))
     }

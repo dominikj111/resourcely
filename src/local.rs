@@ -23,18 +23,22 @@ impl<T> ResourceReader<T> for DefaultLocalResourceReader<T>
 where
     T: Send + Sync + DeserializeOwned + Serialize + Default,
 {
+    fn get_state(&self) -> &ResourceState<T> {
+        &self.state
+    }
+
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
     ) -> Result<DataResult<Arc<T>>, ResourceError> {
         let mut stale_internal_data: Option<Arc<T>> = None;
 
-        if !self.state.is_marked_stale()? {
+        if !self.get_state().is_marked_stale()? {
             ///////////////////////////////////////////
             // 1. Check current internal state first //
             ///////////////////////////////////////////
 
-            if let Some((data, fresh, _)) = self.state.get_internal_data()? {
+            if let Some((data, fresh, _)) = self.get_state().get_internal_data()? {
                 if fresh {
                     // timestamp based
                     return Ok(DataResult::Fresh(data));
@@ -48,12 +52,12 @@ where
         /////////////////////////////////////////////////////////////////
 
         let fresh_data_from_drive = match get_files_starts_with(
-            self.state.get_file_name(),
-            self.state.get_storage_directory(),
+            self.get_state().get_file_name(),
+            self.get_state().get_storage_directory(),
         )
         .first()
         {
-            Some(file_path) => match parse_file::<T>(file_path, self.state.get_file_type()) {
+            Some(file_path) => match parse_file::<T>(file_path, self.get_state().get_file_type()) {
                 Ok(data) => Some(Arc::new(data)),
                 Err(_) => None,
             },
@@ -72,7 +76,7 @@ where
 
         let fresh_data = fresh_data_from_drive.ok_or(ResourceError::FreshingData)?;
 
-        self.state.set_internal_cache(fresh_data.clone())?;
+        self.get_state().set_internal_cache(fresh_data.clone())?;
 
         Ok(DataResult::Fresh(fresh_data))
     }
