@@ -4,7 +4,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/resourcely)](https://crates.io/crates/resourcely)
 [![Documentation](https://docs.rs/resourcely/badge.svg)](https://docs.rs/resourcely)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: BSD-3](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Dependency Status](https://deps.rs/repo/github/dominikj111/resourcely/status.svg)](https://deps.rs/repo/github/dominikj111/resourcely)
 
 Resourcely is a Rust library that provides a convenient way to manage and access resources from both local and remote sources. It offers a unified interface for reading and writing structured data with built-in caching and staleness control.
@@ -15,8 +15,7 @@ Resourcely is a Rust library that provides a convenient way to manage and access
 - **Multiple Formats**: Support for JSON and YAML <span style="color:gray">_(TOML and plain text in development)_</span>
 - **Caching**: Configurable caching with time-based expiration
 - **Staleness Control**: Fine-grained control over when to use cached data
-- **Thread-Safe**: Designed for concurrent access
-- **Zero-copy Parsing**: Efficient handling of large files
+- **Thread-Safe**: Designed for concurrent access using `Arc<T>` for zero-cost sharing across threads
 
 ## Installation
 
@@ -134,17 +133,48 @@ A builder pattern is partially implemented but currently incomplete:
 
 All operations return `Result` types with descriptive error messages for better error handling.
 
+## Design Decisions
+
+### Thread-Safe Architecture
+
+Resourcely uses `Arc<T>` to enable zero-cost sharing of data across multiple threads. This means multiple readers can access the same cached data simultaneously without cloning, making it ideal for web servers, concurrent applications, and multi-threaded data processing.
+
+### Dual-Layer Result Pattern
+
+The library returns `Result<DataResult<Arc<T>>, ResourceError>` which cleanly separates:
+
+- **Operational errors** (`ResourceError`): File not found, network failures, parsing errors
+- **Cache semantics** (`DataResult`): Whether data is fresh or stale, enabling intelligent cache management
+
+This pattern allows you to handle errors appropriately while still making informed decisions about data freshness.
+
+### Generic Type Requirements
+
+The trait bounds `T: Send + Sync + DeserializeOwned + Serialize + Default` ensure:
+
+- **Send + Sync**: Thread safety for concurrent access across multiple threads
+- **DeserializeOwned + Serialize**: Support for multiple data formats (JSON, YAML, etc.)
+- **Default**: Graceful fallback when data is unavailable or parsing fails
+
+These constraints represent the minimal requirements for a thread-safe, generic resource management system.
+
 ## Contributing
+
+**Note**: This library is currently in pre-release development. The first public release is planned once local CRUD operations are implemented, as this represents a complete MVP for practical use cases.
+
+The library follows a philosophy of minimalism with maximum flexibility. We maintain a clean development roadmap and can accommodate new requirements as they arise, but all contributions must align with the library's core principles.
+
+For detailed contribution guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
 
 ## TODO
 
-### Completed Achievements ✅
+### Completed Achievements
 
 - ✅ **Core Resource Management System** - Unified interface for local and remote resource access
 - ✅ **Advanced Error Handling** - Comprehensive error types with descriptive messages using `thiserror`
@@ -155,10 +185,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### High Priority Improvements
 
-- ⬜️ **Comprehensive Test Suite** - Unit and integration tests for all core functionality
+- 🚀 **Comprehensive Test Suite** - Unit and integration tests for all core functionality
+- 🚀 **Code Documentation** - Add comment docs to functions/enums/trais/modules/...
+- 🚀 **Code Consolidation** - Extract and eliminate duplicate code across modules
+- 🟧 **Builder Pattern Completion** - Finalize and export the fluent resource creation API with examples
 - ⬜️ **HTTP Request Timeouts** - Configurable timeout handling for remote resource fetching
-- 🟧 **Code Consolidation** - Extract and eliminate duplicate code across modules
-- 🟧 **Builder Pattern Completion** - Finalize and export the fluent resource creation API
 - ⬜️ **Reactive Resource Management** - Observable pattern with file system watching for real-time updates
 
 ### Medium Priority Features
@@ -170,18 +201,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### New Features Pipeline
 
-- ⬜️ **Local File CRUD Operations** - Create, update, and delete capabilities for local resources
 - ⬜️ **Extended Format Support** - TOML, XML, and plain text parsing
+- ⬜️ **Local File CRUD Operations** - Create, update, and delete capabilities for local resources
 - ⬜️ **RESTful API Integration** - Full CRUD support for REST endpoints and generic HTTP services
 - ⬜️ **Authentication Framework** - API keys, OAuth, and other security mechanisms for remote resources
 - ⬜️ **Secure Protocol Support** - FTP, SFTP, and SSH-based file access
-- ⬜️ **Large File Optimization** - Zero-copy processing and reference-based handling for big files
+- ⬜️ **Large File Optimization** - ⬇️ Zero-copy processing/parsing and reference-based handling for big files
+- ⬜️ **Stream Processing** - ⬆️ Memory-efficient processing for very large files
 
 ### Future Enhancements
 
 - ⬜️ **Large File Downloads** - Efficient handling of multi-gigabyte file transfers
-- 🤔 **Alternative Storage Backends** - Database integration and cloud storage support
 - ⬜️ **Compression Support** - Built-in compression and decompression capabilities
 - ⬜️ **Binary File Processing** - Native support for binary data formats
-- ⬜️ **Advanced Hash Algorithms** - SHA-2, SHA-3, and other cryptographic hash support
-- ⬜️ **Stream Processing** - Memory-efficient processing for very large files
+- 🤔 **Alternative Storage Backends** - Database integration and cloud storage support
+- 🤔 **Advanced Hash Algorithms** - SHA-2, SHA-3, and other cryptographic hash support
