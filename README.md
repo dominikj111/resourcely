@@ -190,8 +190,9 @@ This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICE
 
 - 🚀 **Comprehensive Test Suite** - Unit and integration tests for all core functionality
 - 🚀 **Code Documentation** - Add comment docs to functions/enums/trais/modules/...
-- 🚀 **Code Consolidation** - Extract and eliminate duplicate code across modules
+- 🚀 **Code Consolidation** - Extract and eliminate duplicate code across modules; repeated logic between local and remote resource readers (e.g., cache checks)
 - 🟧 **Builder Pattern Completion** - Finalize and export the fluent resource creation API with examples
+- ⬜️ **CI/CD** - Set CI for linting, formatting, and running tests
 - ⬜️ **Sync implementation** - Sync Implementations where relevant (`./src/local.rs`)
 - ⬜️ **HTTP Request Timeouts** - Configurable timeout handling for remote resource fetching
 - ⬜️ **Reactive Resource Management** - Observable pattern with file system watching for real-time updates
@@ -200,11 +201,13 @@ This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICE
 
 - 🟧 **Resource Factory Patterns** - Convenient creation utilities (skeleton exists but needs implementation)
 - ⬜️ **Enhanced Documentation** - Comprehensive examples and API reference guides
+- ⬜️ **Logging/Tracing** - Add logging or tracing for debugging or production diagnostics
 - 🤔 **Advanced Caching Strategies** - Redis, distributed caching, and cloud-based cache services
 - 🤔 **Performance Benchmarking** - Automated benchmarks for performance-critical operations
 
 ### New Features Pipeline
 
+- ⬜️ **Replace Deprecated serde_yaml**
 - ⬜️ **Extended Format Support** - TOML, XML, and plain text parsing
 - ⬜️ **Local File CRUD Operations** - Create, update, and delete capabilities for local resources
 - ⬜️ **RESTful API Integration** - Full CRUD support for REST endpoints and generic HTTP services
