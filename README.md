@@ -192,6 +192,7 @@ This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICE
 - 🚀 **Code Documentation** - Add comment docs to functions/enums/trais/modules/...
 - 🚀 **Code Consolidation** - Extract and eliminate duplicate code across modules
 - 🟧 **Builder Pattern Completion** - Finalize and export the fluent resource creation API with examples
+- ⬜️ **Sync implementation** - Sync Implementations where relevant (`./src/local.rs`)
 - ⬜️ **HTTP Request Timeouts** - Configurable timeout handling for remote resource fetching
 - ⬜️ **Reactive Resource Management** - Observable pattern with file system watching for real-time updates
 
