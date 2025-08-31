@@ -191,6 +191,7 @@ This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICE
 - 🚀 **Comprehensive Test Suite** - Unit and integration tests for all core functionality
 - 🚀 **Code Documentation** - Add comment docs to functions/enums/trais/modules/...
 - 🚀 **Code Consolidation** - Extract and eliminate duplicate code across modules; repeated logic between local and remote resource readers (e.g., cache checks)
+- ⬜️ **Local File CRUD Operations** - Create, update, and delete capabilities for local resources
 - 🟧 **Builder Pattern Completion** - Finalize and export the fluent resource creation API with examples
 - ⬜️ **CI/CD** - Set CI for linting, formatting, and running tests
 - ⬜️ **Sync implementation** - Sync Implementations where relevant (`./src/local.rs`)
@@ -209,7 +210,6 @@ This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICE
 
 - ⬜️ **Replace Deprecated serde_yaml**
 - ⬜️ **Extended Format Support** - TOML, XML, and plain text parsing
-- ⬜️ **Local File CRUD Operations** - Create, update, and delete capabilities for local resources
 - ⬜️ **RESTful API Integration** - Full CRUD support for REST endpoints and generic HTTP services
 - ⬜️ **Authentication Framework** - API keys, OAuth, and other security mechanisms for remote resources
 - ⬜️ **Secure Protocol Support** - FTP, SFTP, and SSH-based file access
