@@ -141,6 +141,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "error-kit"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -808,6 +815,7 @@ name = "resourcely"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "error-kit",
  "reqwest",
  "serde",
  "serde_json",

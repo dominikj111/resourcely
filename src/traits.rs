@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use error_kit::CommonError;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::base::ResourceState;
@@ -10,6 +11,18 @@ pub enum ResourceFileType {
     Yaml,
     Toml,
     Text,
+}
+
+impl ResourceFileType {
+    /// Convert to &str representation
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            ResourceFileType::Json => "json",
+            ResourceFileType::Yaml => "yaml",
+            ResourceFileType::Toml => "toml",
+            ResourceFileType::Text => "text",
+        }
+    }
 }
 
 impl std::fmt::Display for ResourceFileType {
@@ -23,31 +36,10 @@ impl std::fmt::Display for ResourceFileType {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-pub enum ResourceError {
-    #[error("Failed to acquire cache lock")]
-    CacheLock,
-
-    #[error("Serialization error: {0}")]
-    Serialization(&'static str),
-
-    #[error("Deserialization error: {0}")]
-    Deserialization(&'static str),
-
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
-
-    #[error("Unsupported file type: {0:?}")]
-    UnsupportedFileType(ResourceFileType),
-
-    #[error("Data not found")]
-    FreshingData,
-
-    #[error("No fresh or stale data found")]
-    StaleInternalNone,
-
-    #[error("Timeout exceeded")]
-    Timeout,
+impl AsRef<str> for ResourceFileType {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
 }
 
 pub enum DataResult<T> {
@@ -62,16 +54,16 @@ where
 {
     fn get_state(&self) -> &ResourceState<T>;
 
-    fn mark_as_stale(&self) -> Result<(), ResourceError> {
+    fn mark_as_stale(&self) -> Result<(), CommonError> {
         self.get_state().mark_as_stale();
         Ok(())
     }
 
-    fn is_marked_stale(&self) -> Result<bool, ResourceError> {
+    fn is_marked_stale(&self) -> Result<bool, CommonError> {
         self.get_state().is_marked_stale()
     }
 
-    fn is_fresh(&self) -> Result<bool, ResourceError> {
+    fn is_fresh(&self) -> Result<bool, CommonError> {
         Ok(!self.is_marked_stale()?
             || self.get_state().is_internal_data_fresh()?
             || self.get_state().is_disk_cached_data_fresh()?)
@@ -80,7 +72,7 @@ where
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
-    ) -> Result<DataResult<Arc<T>>, ResourceError>;
+    ) -> Result<DataResult<Arc<T>>, CommonError>;
 
     async fn get_data_or_default(&self, allow_stale: bool) -> Arc<T> {
         match self.get_data_or_error(allow_stale).await {

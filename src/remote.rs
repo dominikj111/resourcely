@@ -1,8 +1,9 @@
 use crate::{
     base::ResourceState,
-    traits::{DataResult, ResourceError, ResourceFileType, ResourceReader},
+    traits::{DataResult, ResourceFileType, ResourceReader},
     utilities::save_to_disk_override,
 };
+use error_kit::CommonError;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{sync::Arc, time::SystemTime};
 
@@ -28,7 +29,7 @@ where
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
-    ) -> Result<DataResult<Arc<T>>, ResourceError> {
+    ) -> Result<DataResult<Arc<T>>, CommonError> {
         let mut stale_internal_data: Option<Arc<T>> = None;
         let mut stale_internal_data_timestamp: Option<SystemTime> = None;
         let mut stale_disk_cached_data: Option<Arc<T>> = None;
@@ -108,10 +109,10 @@ where
                 ));
             }
 
-            return Err(ResourceError::StaleInternalNone);
+            return Err(CommonError::StaleInternalNone);
         }
 
-        let fresh_data = fresh_data_from_server.ok_or(ResourceError::FreshingData)?;
+        let fresh_data = fresh_data_from_server.ok_or(CommonError::UnableToFreshData)?;
 
         save_to_disk_override(
             &*fresh_data,

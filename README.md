@@ -8,9 +8,7 @@
 [![Dependency Status](https://deps.rs/repo/github/dominikj111/resourcely/status.svg)](https://deps.rs/repo/github/dominikj111/resourcely)
 [![Made with Rust](https://img.shields.io/badge/Made%20with-Rust-1f425f.svg?logo=rust)](https://www.rust-lang.org/)
 
-Resourcely is a blazingly fast 🔥 Rust library that provides a convenient way to manage and access resources from both local and remote sources. It offers a unified interface for reading and writing structured data with built-in caching and staleness control.
-
-> **Built with Rust's zero-cost abstractions** 🦀 - Memory-safe, thread-safe, and lightning-fast!
+Resourcely is a library that provides a convenient way to manage and access resources from both local and remote sources. It offers a unified interface for reading and writing structured data with built-in caching and staleness control.
 
 ## Features ✨
 
@@ -144,9 +142,9 @@ Resourcely uses `Arc<T>` to enable zero-cost sharing of data across multiple thr
 
 ### Dual-Layer Result Pattern 🎯
 
-The library returns `Result<DataResult<Arc<T>>, ResourceError>` which cleanly separates:
+The library returns `Result<DataResult<Arc<T>>, CommonError>` which cleanly separates:
 
-- **Operational errors** (`ResourceError`): File not found, network failures, parsing errors
+- **Operational errors** (`CommonError`): File not found, network failures, parsing errors
 - **Cache semantics** (`DataResult`): Whether data is fresh or stale, enabling intelligent cache management
 
 This pattern allows you to handle errors appropriately while still making informed decisions about data freshness.
@@ -169,7 +167,7 @@ The library follows a philosophy of minimalism with maximum flexibility. We main
 
 For detailed contribution guidelines, please see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Contributions are welcome! Please feel free to submit a Pull Request. 🦀
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License 📄
 

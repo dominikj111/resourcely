@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use error_kit::CommonError;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     base::ResourceState,
-    traits::{DataResult, ResourceError, ResourceReader},
+    traits::{DataResult, ResourceReader},
     utilities::{get_files_starts_with, parse_file},
 };
 
@@ -30,7 +31,7 @@ where
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
-    ) -> Result<DataResult<Arc<T>>, ResourceError> {
+    ) -> Result<DataResult<Arc<T>>, CommonError> {
         let mut stale_internal_data: Option<Arc<T>> = None;
 
         if !self.get_state().is_marked_stale()? {
@@ -71,10 +72,10 @@ where
                 ));
             }
 
-            return Err(ResourceError::StaleInternalNone);
+            return Err(CommonError::StaleInternalNone);
         }
 
-        let fresh_data = fresh_data_from_drive.ok_or(ResourceError::FreshingData)?;
+        let fresh_data = fresh_data_from_drive.ok_or(CommonError::UnableToFreshData)?;
 
         self.get_state().set_internal_cache(fresh_data.clone())?;
 
