@@ -93,6 +93,9 @@ pub fn get_files_starts_with(file_name_prefix: &str, dir: &Path) -> Vec<PathBuf>
                                         }
                                     }
                                     None => {
+                                        // TODO: See the 'Tracing callback support' in the 'singleton-registry' crate (reson about first, if not any tracing callback - do error? trace self?)
+                                        // Implement tracing with option to replace by custom callback, so we will be consistent
+
                                         // warn!(
                                         //     "Failed to convert filename to string: {:?}",
                                         //     filename
