@@ -5,7 +5,7 @@ use std::{fmt, io};
 /// All fallible registry operations return this error type to indicate
 /// what went wrong during the operation.
 #[derive(Debug)]
-pub enum RegistryError {
+pub enum ResourceError {
     /// Failed to acquire the cache lock.
     ///
     /// This occurs when the internal cache lock cannot be acquired,
@@ -76,14 +76,14 @@ pub enum RegistryError {
 }
 
 /// Helper constructors for common error patterns.
-impl RegistryError {
+impl ResourceError {
     /// Creates a deserialization error for the specified format.
     ///
     /// # Arguments
     ///
     /// * `format` - The format type that failed to deserialize (e.g., "JSON", "YAML")
-    pub fn deserialization(format: &str) -> RegistryError {
-        RegistryError::Deserialization(format.to_string())
+    pub fn deserialization(format: &str) -> ResourceError {
+        ResourceError::Deserialization(format.to_string())
     }
 
     /// Creates a serialization error for the specified format.
@@ -91,8 +91,8 @@ impl RegistryError {
     /// # Arguments
     ///
     /// * `format` - The format type that failed to serialize (e.g., "JSON", "YAML")
-    pub fn serialization(format: &str) -> RegistryError {
-        RegistryError::Serialization(format.to_string())
+    pub fn serialization(format: &str) -> ResourceError {
+        ResourceError::Serialization(format.to_string())
     }
 
     /// Creates an unsupported file type error.
@@ -100,8 +100,8 @@ impl RegistryError {
     /// # Arguments
     ///
     /// * `file_type` - The file type that is not supported
-    pub fn unsupported_file_type(file_type: &str) -> RegistryError {
-        RegistryError::UnsupportedFileType(file_type.to_string())
+    pub fn unsupported_file_type(file_type: &str) -> ResourceError {
+        ResourceError::UnsupportedFileType(file_type.to_string())
     }
 
     /// Creates an IO error from a standard IO error.
@@ -109,51 +109,51 @@ impl RegistryError {
     /// # Arguments
     ///
     /// * `error` - The underlying IO error
-    pub fn io(error: io::Error) -> RegistryError {
-        RegistryError::Io(error)
+    pub fn io(error: io::Error) -> ResourceError {
+        ResourceError::Io(error)
     }
 }
 
-impl fmt::Display for RegistryError {
+impl fmt::Display for ResourceError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            RegistryError::CacheLock => write!(f, "Failed to acquire cache lock"),
-            RegistryError::StaleInternalNone => {
+            ResourceError::CacheLock => write!(f, "Failed to acquire cache lock"),
+            ResourceError::StaleInternalNone => {
                 write!(f, "No fresh or stale data found")
             }
-            RegistryError::UnableToFreshData => {
+            ResourceError::UnableToFreshData => {
                 write!(f, "Unable to refresh data")
             }
-            RegistryError::Deserialization(format) => {
+            ResourceError::Deserialization(format) => {
                 write!(f, "Failed to deserialize {} data", format)
             }
-            RegistryError::Serialization(format) => {
+            ResourceError::Serialization(format) => {
                 write!(f, "Failed to serialize {} data", format)
             }
-            RegistryError::Io(e) => write!(f, "IO error: {}", e),
-            RegistryError::UnsupportedFileType(file_type) => {
+            ResourceError::Io(e) => write!(f, "IO error: {}", e),
+            ResourceError::UnsupportedFileType(file_type) => {
                 write!(f, "Unsupported file type: {}", file_type)
             }
-            RegistryError::IncorrectTargetPathName => {
+            ResourceError::IncorrectTargetPathName => {
                 write!(f, "Incorrect target path name")
             }
-            RegistryError::InvalidUnicodeEncoding => {
+            ResourceError::InvalidUnicodeEncoding => {
                 write!(f, "Invalid unicode encoding")
             }
-            RegistryError::MissingTimestampSeparator => {
+            ResourceError::MissingTimestampSeparator => {
                 write!(f, "Invalid filename format: Missing timestamp separator")
             }
-            RegistryError::MissingTimestampExtension => {
+            ResourceError::MissingTimestampExtension => {
                 write!(f, "Invalid filename format: Missing timestamp extension")
             }
-            RegistryError::TimestampParseError => {
+            ResourceError::TimestampParseError => {
                 write!(f, "Failed to parse timestamp")
             }
         }
     }
 }
 
-impl std::error::Error for RegistryError {}
+impl std::error::Error for ResourceError {}
 
 #[cfg(test)]
 mod tests {
@@ -161,25 +161,25 @@ mod tests {
 
     #[test]
     fn test_debug_format() {
-        let err = RegistryError::StaleInternalNone;
+        let err = ResourceError::StaleInternalNone;
         assert!(format!("{:?}", err).contains("StaleInternalNone"));
     }
 
     #[test]
     fn test_pattern_matching() {
         // Test that variants can be matched correctly
-        assert!(matches!(RegistryError::CacheLock, RegistryError::CacheLock));
+        assert!(matches!(ResourceError::CacheLock, ResourceError::CacheLock));
         assert!(!matches!(
-            RegistryError::CacheLock,
-            RegistryError::StaleInternalNone
+            ResourceError::CacheLock,
+            ResourceError::StaleInternalNone
         ));
 
         // Test matching with data-carrying variants
-        let err = RegistryError::Deserialization("JSON".to_string());
-        assert!(matches!(err, RegistryError::Deserialization(_)));
+        let err = ResourceError::Deserialization("JSON".to_string());
+        assert!(matches!(err, ResourceError::Deserialization(_)));
 
         // Test that we can extract values from variants
-        if let RegistryError::Deserialization(format) = err {
+        if let ResourceError::Deserialization(format) = err {
             assert_eq!(format, "JSON");
         } else {
             panic!("Expected Deserialization variant");
@@ -188,8 +188,8 @@ mod tests {
 
     #[test]
     fn test_error_trait() {
-        let err_concrete = RegistryError::UnableToFreshData;
-        let err_trait: &dyn std::error::Error = &RegistryError::UnableToFreshData;
+        let err_concrete = ResourceError::UnableToFreshData;
+        let err_trait: &dyn std::error::Error = &ResourceError::UnableToFreshData;
         assert_eq!(err_trait.to_string(), err_concrete.to_string());
     }
 }

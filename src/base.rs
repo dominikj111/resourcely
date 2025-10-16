@@ -6,7 +6,7 @@ use reqwest::Url;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
-use crate::error::RegistryError;
+use crate::error::ResourceError;
 use crate::traits::ResourceFileType;
 use crate::utilities::{get_files_starts_with, parse_file_with_timestamp_by_path};
 
@@ -34,14 +34,14 @@ impl<T: Serialize + DeserializeOwned> ResourceState<T> {
         Self { props }
     }
 
-    fn get_internal_cache_guard(&self) -> Result<RwLockReadGuard<'_, Cache<T>>, RegistryError> {
+    fn get_internal_cache_guard(&self) -> Result<RwLockReadGuard<'_, Cache<T>>, ResourceError> {
         match self.props.internal_cache.read() {
             Ok(guard) => Ok(guard),
-            Err(_) => Err(RegistryError::CacheLock),
+            Err(_) => Err(ResourceError::CacheLock),
         }
     }
 
-    pub fn is_marked_stale(&self) -> Result<bool, RegistryError> {
+    pub fn is_marked_stale(&self) -> Result<bool, ResourceError> {
         let cache = self.get_internal_cache_guard()?;
         Ok(cache.is_stale)
     }
@@ -72,7 +72,7 @@ impl<T: Serialize + DeserializeOwned> ResourceState<T> {
         &self.props.url
     }
 
-    pub fn is_internal_data_fresh(&self) -> Result<bool, RegistryError> {
+    pub fn is_internal_data_fresh(&self) -> Result<bool, ResourceError> {
         let cache = self.get_internal_cache_guard()?;
 
         let is_fresh = cache
@@ -87,7 +87,7 @@ impl<T: Serialize + DeserializeOwned> ResourceState<T> {
         Ok(is_fresh)
     }
 
-    pub fn is_disk_cached_data_fresh(&self) -> Result<bool, RegistryError> {
+    pub fn is_disk_cached_data_fresh(&self) -> Result<bool, ResourceError> {
         // TODO: improvement required - this causes the drive reading and content parsing;
         match self.get_disk_cached_data()? {
             Some((_, fresh, _)) => Ok(fresh),
@@ -95,7 +95,7 @@ impl<T: Serialize + DeserializeOwned> ResourceState<T> {
         }
     }
 
-    pub fn get_internal_data(&self) -> Result<Option<(Arc<T>, bool, SystemTime)>, RegistryError> {
+    pub fn get_internal_data(&self) -> Result<Option<(Arc<T>, bool, SystemTime)>, ResourceError> {
         let cache = self.get_internal_cache_guard()?;
 
         if cache.data.is_none() {
@@ -116,7 +116,7 @@ impl<T: Serialize + DeserializeOwned> ResourceState<T> {
         Ok(Some((data, is_fresh, cache.timestamp)))
     }
 
-    pub fn set_internal_cache<D>(&self, data: D) -> Result<(), RegistryError>
+    pub fn set_internal_cache<D>(&self, data: D) -> Result<(), ResourceError>
     where
         D: Into<Arc<T>>,
     {
@@ -124,7 +124,7 @@ impl<T: Serialize + DeserializeOwned> ResourceState<T> {
             .props
             .internal_cache
             .write()
-            .map_err(|_| RegistryError::CacheLock)?;
+            .map_err(|_| ResourceError::CacheLock)?;
 
         *cache_write = Cache {
             data: Some(data.into()), // auto converts T → Arc<T> or Arc<T> → Arc<T>
@@ -137,7 +137,7 @@ impl<T: Serialize + DeserializeOwned> ResourceState<T> {
 
     pub fn get_disk_cached_data(
         &self,
-    ) -> Result<Option<(Arc<T>, bool, SystemTime)>, RegistryError> {
+    ) -> Result<Option<(Arc<T>, bool, SystemTime)>, ResourceError> {
         let disk_files =
             get_files_starts_with(&self.props.file_name, &self.props.storage_directory);
 

@@ -4,7 +4,7 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::{
     base::ResourceState,
-    error::RegistryError,
+    error::ResourceError,
     traits::{DataResult, ResourceReader},
     utilities::{get_files_starts_with, parse_file},
 };
@@ -31,7 +31,7 @@ where
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
-    ) -> Result<DataResult<Arc<T>>, RegistryError> {
+    ) -> Result<DataResult<Arc<T>>, ResourceError> {
         let mut stale_internal_data: Option<Arc<T>> = None;
 
         if !self.get_state().is_marked_stale()? {
@@ -70,10 +70,10 @@ where
                 return Ok(DataResult::Stale(data));
             }
 
-            return Err(RegistryError::StaleInternalNone);
+            return Err(ResourceError::StaleInternalNone);
         }
 
-        let fresh_data = fresh_data_from_drive.ok_or(RegistryError::UnableToFreshData)?;
+        let fresh_data = fresh_data_from_drive.ok_or(ResourceError::UnableToFreshData)?;
 
         self.get_state().set_internal_cache(fresh_data.clone())?;
 

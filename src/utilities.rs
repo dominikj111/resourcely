@@ -6,41 +6,41 @@ use std::{
 
 use serde::{Deserialize, Serialize};
 
-use crate::{error::RegistryError, traits::ResourceFileType};
+use crate::{error::ResourceError, traits::ResourceFileType};
 
 fn parse_by_json_content<T: for<'a> Deserialize<'a>>(
     file_content: &str,
-) -> Result<T, RegistryError> {
+) -> Result<T, ResourceError> {
     match serde_json::from_str(file_content) {
         Ok(disk_manifest) => Ok(disk_manifest),
-        Err(_) => Err(RegistryError::deserialization("JSON")),
+        Err(_) => Err(ResourceError::deserialization("JSON")),
     }
 }
 
 fn parse_by_yaml_content<T: for<'a> Deserialize<'a>>(
     file_content: &str,
-) -> Result<T, RegistryError> {
+) -> Result<T, ResourceError> {
     match serde_yaml::from_str(file_content) {
         Ok(disk_manifest) => Ok(disk_manifest),
-        Err(_) => Err(RegistryError::deserialization("YAML")),
+        Err(_) => Err(ResourceError::deserialization("YAML")),
     }
 }
 
 pub fn parse_file<T: for<'a> Deserialize<'a>>(
     file_path: &Path,
     file_type: &ResourceFileType,
-) -> Result<T, RegistryError> {
-    let get_file_content = || -> Result<String, RegistryError> {
+) -> Result<T, ResourceError> {
+    let get_file_content = || -> Result<String, ResourceError> {
         match fs::read_to_string(file_path) {
             Ok(content) => Ok(content),
-            Err(e) => Err(RegistryError::Io(e)),
+            Err(e) => Err(ResourceError::Io(e)),
         }
     };
 
     match file_type {
         ResourceFileType::Json => Ok(parse_by_json_content::<T>(&get_file_content()?)?),
         ResourceFileType::Yaml => Ok(parse_by_yaml_content::<T>(&get_file_content()?)?),
-        _ => Err(RegistryError::unsupported_file_type(file_type.as_str())),
+        _ => Err(ResourceError::unsupported_file_type(file_type.as_str())),
     }
 }
 
@@ -49,23 +49,23 @@ pub fn parse_file<T: for<'a> Deserialize<'a>>(
 pub fn parse_file_with_timestamp_by_path<T: for<'a> Deserialize<'a>>(
     file_path: &Path,
     file_type: &ResourceFileType,
-) -> Result<(T, SystemTime), RegistryError> {
+) -> Result<(T, SystemTime), ResourceError> {
     let filename = file_path
         .file_name()
-        .ok_or(RegistryError::IncorrectTargetPathName)?
+        .ok_or(ResourceError::IncorrectTargetPathName)?
         .to_str()
-        .ok_or(RegistryError::InvalidUnicodeEncoding)?;
+        .ok_or(ResourceError::InvalidUnicodeEncoding)?;
 
     let disk_manifest_timestamp_duration = Duration::from_secs(
         filename
             .split('-')
             .next_back()
-            .ok_or(RegistryError::MissingTimestampSeparator)?
+            .ok_or(ResourceError::MissingTimestampSeparator)?
             .split('.')
             .next()
-            .ok_or(RegistryError::MissingTimestampExtension)?
+            .ok_or(ResourceError::MissingTimestampExtension)?
             .parse::<u64>()
-            .map_err(|_| RegistryError::TimestampParseError)?,
+            .map_err(|_| ResourceError::TimestampParseError)?,
     );
 
     let disk_manifest_timestamp = SystemTime::UNIX_EPOCH + disk_manifest_timestamp_duration;
@@ -130,23 +130,23 @@ pub fn save_to_disk_override<T>(
     data: &T,
     file_path: &Path,
     file_type: &ResourceFileType,
-) -> Result<(), RegistryError>
+) -> Result<(), ResourceError>
 where
     T: Serialize,
 {
     let stringified_data = match file_type {
         ResourceFileType::Json => {
-            serde_json::to_string(data).map_err(|_| RegistryError::serialization("JSON"))
+            serde_json::to_string(data).map_err(|_| ResourceError::serialization("JSON"))
         }
         ResourceFileType::Yaml => {
-            serde_yaml::to_string(data).map_err(|_| RegistryError::deserialization("YAML"))
+            serde_yaml::to_string(data).map_err(|_| ResourceError::deserialization("YAML"))
         }
         _ => {
-            return Err(RegistryError::unsupported_file_type(file_type.as_str()));
+            return Err(ResourceError::unsupported_file_type(file_type.as_str()));
         }
     }?;
 
-    fs::write(file_path, stringified_data).map_err(RegistryError::Io)?;
+    fs::write(file_path, stringified_data).map_err(ResourceError::Io)?;
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use crate::{
     base::ResourceState,
-    error::RegistryError,
+    error::ResourceError,
     traits::{DataResult, ResourceFileType, ResourceReader},
     utilities::save_to_disk_override,
 };
@@ -30,7 +30,7 @@ where
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
-    ) -> Result<DataResult<Arc<T>>, RegistryError> {
+    ) -> Result<DataResult<Arc<T>>, ResourceError> {
         let mut stale_internal_data: Option<Arc<T>> = None;
         let mut stale_internal_data_timestamp: Option<SystemTime> = None;
         let mut stale_disk_cached_data: Option<Arc<T>> = None;
@@ -113,7 +113,7 @@ where
             }
         }
 
-        let fresh_data = fresh_data_from_server.ok_or(RegistryError::UnableToFreshData)?;
+        let fresh_data = fresh_data_from_server.ok_or(ResourceError::UnableToFreshData)?;
 
         save_to_disk_override(
             &*fresh_data,
