@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use error_kit::CommonError;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::base::ResourceState;
+use crate::{base::ResourceState, error::RegistryError};
 
 #[derive(Debug, Clone)]
 pub enum ResourceFileType {
@@ -54,16 +53,16 @@ where
 {
     fn get_state(&self) -> &ResourceState<T>;
 
-    fn mark_as_stale(&self) -> Result<(), CommonError> {
+    fn mark_as_stale(&self) -> Result<(), RegistryError> {
         self.get_state().mark_as_stale();
         Ok(())
     }
 
-    fn is_marked_stale(&self) -> Result<bool, CommonError> {
+    fn is_marked_stale(&self) -> Result<bool, RegistryError> {
         self.get_state().is_marked_stale()
     }
 
-    fn is_fresh(&self) -> Result<bool, CommonError> {
+    fn is_fresh(&self) -> Result<bool, RegistryError> {
         Ok(!self.is_marked_stale()?
             || self.get_state().is_internal_data_fresh()?
             || self.get_state().is_disk_cached_data_fresh()?)
@@ -72,7 +71,7 @@ where
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
-    ) -> Result<DataResult<Arc<T>>, CommonError>;
+    ) -> Result<DataResult<Arc<T>>, RegistryError>;
 
     async fn get_data_or_default(&self, allow_stale: bool) -> Arc<T> {
         match self.get_data_or_error(allow_stale).await {

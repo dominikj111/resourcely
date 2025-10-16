@@ -1,9 +1,10 @@
 use crate::{
     base::ResourceState,
+    error::RegistryError,
     traits::{DataResult, ResourceFileType, ResourceReader},
     utilities::save_to_disk_override,
 };
-use error_kit::CommonError;
+
 use serde::{de::DeserializeOwned, Serialize};
 use std::{sync::Arc, time::SystemTime};
 
@@ -29,7 +30,7 @@ where
     async fn get_data_or_error(
         &self,
         allow_stale: bool,
-    ) -> Result<DataResult<Arc<T>>, CommonError> {
+    ) -> Result<DataResult<Arc<T>>, RegistryError> {
         let mut stale_internal_data: Option<Arc<T>> = None;
         let mut stale_internal_data_timestamp: Option<SystemTime> = None;
         let mut stale_disk_cached_data: Option<Arc<T>> = None;
@@ -90,29 +91,29 @@ where
             };
 
         if fresh_data_from_server.is_none() && allow_stale {
-            if stale_internal_data.is_some() && stale_disk_cached_data.is_some() {
-                if stale_disk_cached_data_timestamp > stale_internal_data_timestamp {
-                    return Ok(DataResult::Stale(
-                        stale_disk_cached_data.unwrap(), // safe to unwrap since checked above
-                    ));
+            match (stale_internal_data, stale_disk_cached_data) {
+                (Some(internal), Some(disk)) => {
+                    // Both stale sources available, return the newer one
+                    if stale_disk_cached_data_timestamp > stale_internal_data_timestamp {
+                        return Ok(DataResult::Stale(disk));
+                    }
+                    return Ok(DataResult::Stale(internal));
                 }
-                return Ok(DataResult::Stale(
-                    stale_internal_data.unwrap(), // safe to unwrap since checked above
-                ));
-            } else if stale_internal_data.is_some() {
-                return Ok(DataResult::Stale(
-                    stale_internal_data.unwrap(), // safe to unwrap since checked above
-                ));
-            } else if stale_disk_cached_data.is_some() {
-                return Ok(DataResult::Stale(
-                    stale_disk_cached_data.unwrap(), // safe to unwrap since checked above
-                ));
+                (Some(internal), None) => {
+                    // Only internal cache available
+                    return Ok(DataResult::Stale(internal));
+                }
+                (None, Some(disk)) => {
+                    // Only disk cache available
+                    return Ok(DataResult::Stale(disk));
+                }
+                (None, None) => {
+                    // No stale data available, continue next ti fresh data
+                }
             }
-
-            return Err(CommonError::StaleInternalNone);
         }
 
-        let fresh_data = fresh_data_from_server.ok_or(CommonError::UnableToFreshData)?;
+        let fresh_data = fresh_data_from_server.ok_or(RegistryError::UnableToFreshData)?;
 
         save_to_disk_override(
             &*fresh_data,

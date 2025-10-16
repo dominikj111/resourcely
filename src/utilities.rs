@@ -1,48 +1,46 @@
 use std::{
     fs,
-    io::{Error, ErrorKind},
     path::{Path, PathBuf},
     time::{Duration, SystemTime},
 };
 
-use error_kit::CommonError;
 use serde::{Deserialize, Serialize};
 
-use crate::traits::ResourceFileType;
+use crate::{error::RegistryError, traits::ResourceFileType};
 
 fn parse_by_json_content<T: for<'a> Deserialize<'a>>(
     file_content: &str,
-) -> Result<T, CommonError> {
+) -> Result<T, RegistryError> {
     match serde_json::from_str(file_content) {
         Ok(disk_manifest) => Ok(disk_manifest),
-        Err(_) => Err(CommonError::Deserialization("JSON")),
+        Err(_) => Err(RegistryError::deserialization("JSON")),
     }
 }
 
 fn parse_by_yaml_content<T: for<'a> Deserialize<'a>>(
     file_content: &str,
-) -> Result<T, CommonError> {
+) -> Result<T, RegistryError> {
     match serde_yaml::from_str(file_content) {
         Ok(disk_manifest) => Ok(disk_manifest),
-        Err(_) => Err(CommonError::Deserialization("YAML")),
+        Err(_) => Err(RegistryError::deserialization("YAML")),
     }
 }
 
 pub fn parse_file<T: for<'a> Deserialize<'a>>(
     file_path: &Path,
     file_type: &ResourceFileType,
-) -> Result<T, CommonError> {
-    let get_file_content = || -> Result<String, CommonError> {
+) -> Result<T, RegistryError> {
+    let get_file_content = || -> Result<String, RegistryError> {
         match fs::read_to_string(file_path) {
             Ok(content) => Ok(content),
-            Err(e) => Err(CommonError::Io(e)),
+            Err(e) => Err(RegistryError::Io(e)),
         }
     };
 
     match file_type {
         ResourceFileType::Json => Ok(parse_by_json_content::<T>(&get_file_content()?)?),
         ResourceFileType::Yaml => Ok(parse_by_yaml_content::<T>(&get_file_content()?)?),
-        _ => Err(CommonError::UnsupportedFileType(file_type.as_str())),
+        _ => Err(RegistryError::unsupported_file_type(file_type.as_str())),
     }
 }
 
@@ -51,45 +49,23 @@ pub fn parse_file<T: for<'a> Deserialize<'a>>(
 pub fn parse_file_with_timestamp_by_path<T: for<'a> Deserialize<'a>>(
     file_path: &Path,
     file_type: &ResourceFileType,
-) -> Result<(T, SystemTime), CommonError> {
+) -> Result<(T, SystemTime), RegistryError> {
     let filename = file_path
         .file_name()
-        .ok_or_else(|| {
-            CommonError::Io(Error::new(
-                ErrorKind::Other,
-                "Failed to get filename from path",
-            ))
-        })?
+        .ok_or(RegistryError::IncorrectTargetPathName)?
         .to_str()
-        .ok_or_else(|| {
-            CommonError::Io(Error::new(ErrorKind::Other, "Invalid filename encoding"))
-        })?;
+        .ok_or(RegistryError::InvalidUnicodeEncoding)?;
 
     let disk_manifest_timestamp_duration = Duration::from_secs(
         filename
             .split('-')
             .next_back()
-            .ok_or_else(|| {
-                CommonError::Io(Error::new(
-                    ErrorKind::Other,
-                    "Invalid filename format: missing timestamp separator",
-                ))
-            })?
+            .ok_or(RegistryError::MissingTimestampSeparator)?
             .split('.')
             .next()
-            .ok_or_else(|| {
-                CommonError::Io(Error::new(
-                    ErrorKind::Other,
-                    "Invalid filename format: missing extension",
-                ))
-            })?
+            .ok_or(RegistryError::MissingTimestampExtension)?
             .parse::<u64>()
-            .map_err(|e| {
-                CommonError::Io(Error::new(
-                    ErrorKind::Other,
-                    format!("Failed to parse timestamp: {e}"),
-                ))
-            })?,
+            .map_err(|_| RegistryError::TimestampParseError)?,
     );
 
     let disk_manifest_timestamp = SystemTime::UNIX_EPOCH + disk_manifest_timestamp_duration;
@@ -154,23 +130,23 @@ pub fn save_to_disk_override<T>(
     data: &T,
     file_path: &Path,
     file_type: &ResourceFileType,
-) -> Result<(), CommonError>
+) -> Result<(), RegistryError>
 where
     T: Serialize,
 {
     let stringified_data = match file_type {
         ResourceFileType::Json => {
-            serde_json::to_string(data).map_err(|_| CommonError::Serialization("JSON"))
+            serde_json::to_string(data).map_err(|_| RegistryError::serialization("JSON"))
         }
         ResourceFileType::Yaml => {
-            serde_yaml::to_string(data).map_err(|_| CommonError::Serialization("YAML"))
+            serde_yaml::to_string(data).map_err(|_| RegistryError::deserialization("YAML"))
         }
         _ => {
-            return Err(CommonError::UnsupportedFileType(file_type.as_str()));
+            return Err(RegistryError::unsupported_file_type(file_type.as_str()));
         }
     }?;
 
-    fs::write(file_path, stringified_data).map_err(CommonError::Io)?;
+    fs::write(file_path, stringified_data).map_err(RegistryError::Io)?;
 
     Ok(())
 }

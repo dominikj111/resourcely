@@ -1,4 +1,5 @@
 mod base;
+mod error;
 mod traits;
 mod utilities;
 
